@@ -1,32 +1,32 @@
 export function calcTileType(index, boardSize) {
   if (index === 0) {
-    return "top-left";
-  } else if (index === boardSize - 1) {
-    return "top-right";
-  } else if (index < boardSize - 1) {
-    return "top";
-  } else if (index === boardSize ** 2 - 1) {
-    return "bottom-right";
-  } else if (index === boardSize ** 2 - boardSize) {
-    return "bottom-left";
-  } else if (index > boardSize ** 2 - boardSize) {
-    return "bottom";
-  } else if (index % boardSize === 0) {
-    return "left";
-  } else if (index % boardSize > boardSize - 2) {
-    return "right";
+    return 'top-left';
+  } if (index === boardSize - 1) {
+    return 'top-right';
+  } if (index < boardSize - 1) {
+    return 'top';
+  } if (index === boardSize ** 2 - 1) {
+    return 'bottom-right';
+  } if (index === boardSize ** 2 - boardSize) {
+    return 'bottom-left';
+  } if (index > boardSize ** 2 - boardSize) {
+    return 'bottom';
+  } if (index % boardSize === 0) {
+    return 'left';
+  } if (index % boardSize > boardSize - 2) {
+    return 'right';
   }
-  return "center";
+  return 'center';
 }
 
 export function calcHealthLevel(health) {
   if (health < 15) {
-    return "critical";
+    return 'critical';
   }
 
   if (health < 50) {
-    return "normal";
+    return 'normal';
   }
 
-  return "high";
+  return 'high';
 }
