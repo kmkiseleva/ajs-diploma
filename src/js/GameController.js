@@ -5,9 +5,13 @@ export default class GameController {
   }
 
   init() {
-    this.gamePlay.drawUi('prairie');
+    this.gamePlay.drawUi("prairie");
     // TODO: add event listeners to gamePlay events
     // TODO: load saved stated from stateService
+  }
+
+  addOnCellEnter() {
+    this.gamePlay.addCellEnterListener(this.onCellEnter);
   }
 
   onCellClick(index) {
@@ -20,5 +24,6 @@ export default class GameController {
 
   onCellLeave(index) {
     // TODO: react to mouse leave
+    this.gamePlay.hideCellTooltip(index);
   }
 }
