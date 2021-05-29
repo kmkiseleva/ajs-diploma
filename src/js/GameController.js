@@ -1,3 +1,11 @@
+import GamePlay from "./GamePlay";
+import GameState from "./GameState";
+import cursors from "./cursors";
+import themes from "./themes";
+import { characterGenerator, generateTeam } from "./generators";
+import Character from "./Character";
+import Team from "./Team";
+
 export default class GameController {
   constructor(gamePlay, stateService) {
     this.gamePlay = gamePlay;
@@ -5,9 +13,21 @@ export default class GameController {
   }
 
   init() {
-    this.gamePlay.drawUi("prairie");
+    this.score = 0;
+    this.currentLevel = 1;
+    this.gamePlay.drawUi(themes[this.currentLevel - 1]);
+    this.drawTeams();
+
     // TODO: add event listeners to gamePlay events
     // TODO: load saved stated from stateService
+  }
+
+  drawTeams() {
+    const playerTeam = generateTeam(new Team().playerTeam);
+    const computerTeam = generateTeam(new Team().computerTeam);
+
+    this.players = [...playerTeam, ...computerTeam];
+    this.gamePlay.redrawPositions(this.players);
   }
 
   addOnCellEnter() {

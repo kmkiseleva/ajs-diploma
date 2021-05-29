@@ -8,6 +8,6 @@ import Daemon from "./Daemon";
 export default class Team {
   constructor() {
     this.playerTeam = [Bowman, Swordsman, Magician];
-    this.npcTeam = [Vampire, Undead, Daemon];
+    this.computerTeam = [Vampire, Undead, Daemon];
   }
 }
