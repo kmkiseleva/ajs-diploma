@@ -23,10 +23,10 @@ export default class GameController {
   }
 
   drawTeams() {
-    const playerTeam = generateTeam(new Team().playerTeam);
+    const userTeam = generateTeam(new Team().userTeam);
     const computerTeam = generateTeam(new Team().computerTeam);
 
-    this.players = [...playerTeam, ...computerTeam];
+    this.players = [...userTeam, ...computerTeam];
     this.gamePlay.redrawPositions(this.players);
   }
 
