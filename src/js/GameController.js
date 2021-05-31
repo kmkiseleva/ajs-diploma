@@ -32,6 +32,7 @@ export default class GameController {
     this.currentLevel = 1;
     this.gamePlay.drawUi(themes[this.currentLevel - 1]);
 
+    //создание команды
     const userTeam = generateTeam(new Team().userTeam, 1, 2);
     const computerTeam = generateTeam(new Team().computerTeam, 1, 2);
 
@@ -50,6 +51,11 @@ export default class GameController {
       ...this.userTeamWithPositions,
       ...this.computerTeamWithPositions,
     ]);
+
+    this.players = [
+      ...this.userTeamWithPositions,
+      ...this.computerTeamWithPositions,
+    ];
   }
 
   setPositions(userTeam, computerTeam) {
@@ -89,12 +95,12 @@ export default class GameController {
   }
 
   //Events
-  clickCellsListener() {
-    this.gamePlay.addCellClickListener(this.onCellClick.bind(this));
-  }
-
   enterOnCellsListener() {
     this.gamePlay.addCellEnterListener(this.onCellEnter.bind(this));
+  }
+
+  clickCellsListener() {
+    this.gamePlay.addCellClickListener(this.onCellClick.bind(this));
   }
 
   leaveCellsListener() {
@@ -114,13 +120,21 @@ export default class GameController {
   }
 
   // ========================
+  onCellEnter(index) {
+    // TODO: react to mouse enter
+    const currentChar = this.players.find((char) => char.position === index);
+
+    if (currentChar) {
+      const { level, attack, defence, health } = currentChar.character;
+      this.gamePlay.showCellTooltip(
+        `🎖${level} ⚔${attack} 🛡${defence} ❤${health}`,
+        index
+      );
+    }
+  }
 
   onCellClick(index) {
     // TODO: react to click
-  }
-
-  onCellEnter(index) {
-    // TODO: react to mouse enter
   }
 
   onCellLeave(index) {
