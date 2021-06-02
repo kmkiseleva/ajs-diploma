@@ -2,7 +2,12 @@ import GamePlay from "./GamePlay";
 import GameState from "./GameState";
 import cursors from "./cursors";
 import themes from "./themes";
-import { characterGenerator, generateTeam } from "./generators";
+import {
+  characterGenerator,
+  generateTeam,
+  checkForStep,
+  checkForAttack,
+} from "./generators";
 import Character from "./Character";
 import PositionedCharacter from "./PositionedCharacter";
 import Team from "./Team";
@@ -32,6 +37,7 @@ export default class GameController {
     this.currentLevel = 1;
     this.gamePlay.drawUi(themes[this.currentLevel - 1]);
     this.selectedChar = null;
+    this.userTurn = true;
 
     // создание команды
     const userTeam = generateTeam(new Team().userTeam, 1, 2);
@@ -93,6 +99,9 @@ export default class GameController {
         ]
       )
     );
+    // this.computerTeamWithPositions.push(
+    //   new PositionedCharacter(computerTeam[1], 50)
+    // );
   }
 
   // Events
@@ -134,10 +143,17 @@ export default class GameController {
         `🎖${level} ⚔${attack} 🛡${defence} ❤${health}`,
         index
       );
+    } else {
+      this.gamePlay.setCursor(cursors.auto);
     }
 
     // подсвечивание ячейки зеленым (в рамках допустимых переходов)
     if (this.selectedChar && !currentChar) {
+      this.stepPossibility = checkForStep(
+        this.selectedChar.position,
+        index,
+        this.selectedChar.character.step
+      );
       if (this.stepPossibility) {
         this.gamePlay.selectCell(index, "green");
         this.gamePlay.setCursor(cursors.pointer);
@@ -146,6 +162,11 @@ export default class GameController {
 
     // подсвечивание ячейки красным (в рамках допустимого радиуса атаки)
     if (this.selectedChar && currentChar && !currentChar.character.userPlayer) {
+      this.attackPossibility = checkForAttack(
+        this.selectedChar.position,
+        index,
+        this.selectedChar.character.rangeAttack
+      );
       if (this.attackPossibility) {
         this.gamePlay.selectCell(index, "red");
         this.gamePlay.setCursor(cursors.crosshair);
@@ -158,6 +179,8 @@ export default class GameController {
   onCellClick(index) {
     // TODO: react to click
     const currentChar = this.players.find((char) => char.position === index);
+
+    // выбор игрока при клике на ячейку либо ошибка, если игрок - компьютерный
     if (currentChar && currentChar.character.userPlayer) {
       this.players.forEach((char) => this.gamePlay.deselectCell(char.position));
       this.gamePlay.selectCell(index);
@@ -166,11 +189,48 @@ export default class GameController {
       GamePlay.showError("This is a computer player! Choose your one.");
       return;
     }
+
+    // ход выбранного игрока в допустимую ячейку
+    if (
+      !currentChar &&
+      this.selectedChar &&
+      this.selectedChar.position !== index
+    ) {
+      let currentPosition = this.selectedChar.position;
+      if (this.stepPossibility) {
+        this.selectedChar.position = index;
+        this.gamePlay.redrawPositions([
+          ...this.userTeamWithPositions,
+          ...this.computerTeamWithPositions,
+        ]);
+        this.gamePlay.selectCell(index);
+        this.gamePlay.deselectCell(currentPosition);
+        this.userTurn = false;
+      }
+    }
+
+    // атака выбранного игрока на допустимую ячейку с компьютерным игроком
+    if (
+      this.selectedChar &&
+      currentChar &&
+      this.selectedChar.position !== index
+    ) {
+      if (this.attackPossibility) {
+        const damage = Math.max(
+          this.selectedChar.character.attack - currentChar.character.defence,
+          this.selectedChar.character.attack * 0.1
+        );
+        this.gamePlay.showDamage(index, damage);
+      }
+    }
   }
 
   onCellLeave(index) {
     // TODO: react to mouse leave
     this.gamePlay.hideCellTooltip(index);
+    if (this.selectedChar && this.selectedChar.position !== index) {
+      this.gamePlay.deselectCell(index);
+    }
   }
 
   onNewGame() {}
