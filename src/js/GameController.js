@@ -99,9 +99,6 @@ export default class GameController {
         ]
       )
     );
-    // this.computerTeamWithPositions.push(
-    //   new PositionedCharacter(computerTeam[1], 50)
-    // );
   }
 
   // Events
@@ -185,9 +182,14 @@ export default class GameController {
       this.players.forEach((char) => this.gamePlay.deselectCell(char.position));
       this.gamePlay.selectCell(index);
       this.selectedChar = currentChar;
-    } else if (currentChar && !currentChar.character.userPlayer) {
+    }
+
+    if (
+      currentChar &&
+      !currentChar.character.userPlayer &&
+      !this.attackPossibility
+    ) {
       GamePlay.showError("This is a computer player! Choose your one.");
-      return;
     }
 
     // ход выбранного игрока в допустимую ячейку
@@ -213,15 +215,15 @@ export default class GameController {
     if (
       this.selectedChar &&
       currentChar &&
-      this.selectedChar.position !== index
+      this.selectedChar.position !== index &&
+      this.attackPossibility
     ) {
-      if (this.attackPossibility) {
-        const damage = Math.max(
-          this.selectedChar.character.attack - currentChar.character.defence,
-          this.selectedChar.character.attack * 0.1
-        );
-        this.gamePlay.showDamage(index, damage);
-      }
+      this.cellClickListeners = [];
+      const damage = +Math.max(
+        this.selectedChar.character.attack - currentChar.character.defence,
+        this.selectedChar.character.attack * 0.1
+      ).toFixed();
+      this.gamePlay.showDamage(index, damage);
     }
   }
 
