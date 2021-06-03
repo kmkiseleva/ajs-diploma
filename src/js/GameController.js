@@ -241,9 +241,24 @@ export default class GameController {
     }
   }
 
-  onNewGame() {}
+  onNewGame() {
+    this.startGame();
+    this.clickCellsListener();
+    this.enterOnCellsListener();
+    this.leaveCellsListener();
+  }
 
-  onSaveGame() {}
+  onSaveGame() {
+    const savingTheGame = {
+      level: this.currentLevel,
+      scores: this.scores,
+      teams: this.players,
+      turn: this.userTurn,
+      players: this.players,
+    };
+
+    this.stateService.save(GameState.from(savingTheGame));
+  }
 
   onLoadGame() {}
 }
