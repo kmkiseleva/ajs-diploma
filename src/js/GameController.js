@@ -2,12 +2,7 @@ import GamePlay from "./GamePlay";
 import GameState from "./GameState";
 import cursors from "./cursors";
 import themes from "./themes";
-import {
-  characterGenerator,
-  generateTeam,
-  checkForStep,
-  checkForAttack,
-} from "./generators";
+import { characterGenerator, generateTeam } from "./generators";
 import Character from "./Character";
 import PositionedCharacter from "./PositionedCharacter";
 import Team from "./Team";
@@ -65,6 +60,7 @@ export default class GameController {
     this.attackPossibility = false;
   }
 
+  // установка первоначальных позиций игроков
   setPositions(userTeam, computerTeam) {
     this.userTeamWithPositions.push(
       new PositionedCharacter(
@@ -194,9 +190,10 @@ export default class GameController {
 
     // ход выбранного игрока в допустимую ячейку
     if (
-      !currentChar &&
       this.selectedChar &&
-      this.selectedChar.position !== index
+      !currentChar &&
+      this.selectedChar.position !== index &&
+      this.userTurn
     ) {
       let currentPosition = this.selectedChar.position;
       if (this.stepPossibility) {
@@ -207,7 +204,7 @@ export default class GameController {
         ]);
         this.gamePlay.selectCell(index);
         this.gamePlay.deselectCell(currentPosition);
-        this.userTurn = false;
+        // this.userTurn = false;
       }
     }
 
@@ -215,15 +212,24 @@ export default class GameController {
     if (
       this.selectedChar &&
       currentChar &&
+      !currentChar.character.userPlayer &&
       this.selectedChar.position !== index &&
-      this.attackPossibility
+      this.attackPossibility &&
+      this.userTurn
     ) {
-      this.cellClickListeners = [];
-      const damage = +Math.max(
-        this.selectedChar.character.attack - currentChar.character.defence,
-        this.selectedChar.character.attack * 0.1
-      ).toFixed();
-      this.gamePlay.showDamage(index, damage);
+      const attacker = this.selectedChar;
+      const target = currentChar;
+      const damagePoints = Math.max(
+        attacker.character.attack - target.character.defence,
+        attacker.character.attack * 0.1
+      );
+      target.character.damage(damagePoints);
+      this.gamePlay.redrawPositions([
+        ...this.userTeamWithPositions,
+        ...this.computerTeamWithPositions,
+      ]);
+      this.gamePlay.showDamage(index, damagePoints);
+      // this.userTurn = false;
     }
   }
 
@@ -240,4 +246,46 @@ export default class GameController {
   onSaveGame() {}
 
   onLoadGame() {}
+}
+
+// дополнительные функции
+
+// функция проверки хода
+function checkForStep(currentPosition, possiblePosition, step) {
+  const validCells = [];
+  for (let i = 1; i <= step; i += 1) {
+    validCells.push(
+      currentPosition + i,
+      currentPosition - i,
+      currentPosition + i * 7,
+      currentPosition - i * 7,
+      currentPosition + i * 8,
+      currentPosition - i * 8,
+      currentPosition + i * 9,
+      currentPosition - i * 9
+    );
+  }
+  if (validCells.includes(possiblePosition)) {
+    return true;
+  }
+}
+
+// функция проверки атаки
+function checkForAttack(currentPosition, possiblePosition, rangeAttack) {
+  const validCells = [];
+  for (let i = 1; i <= rangeAttack; i += 1) {
+    validCells.push(
+      currentPosition + i,
+      currentPosition - i,
+      currentPosition + i * 7,
+      currentPosition - i * 7,
+      currentPosition + i * 8,
+      currentPosition - i * 8,
+      currentPosition + i * 9,
+      currentPosition - i * 9
+    );
+  }
+  if (validCells.includes(possiblePosition)) {
+    return true;
+  }
 }
