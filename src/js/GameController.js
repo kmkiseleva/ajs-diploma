@@ -265,42 +265,45 @@ export default class GameController {
 
 // дополнительные функции
 
+// перевод поля в двумерную плоскость
+
+function twoDimensionalBoard() {
+  return new Array(64)
+    .fill(0)
+    .map((item, index) => (index += 1))
+    .map((item, index) => ({ x: index % 8, y: Math.floor(index / 8) }));
+}
+
 // функция проверки хода
 function checkForStep(currentPosition, possiblePosition, step) {
-  const validCells = [];
-  for (let i = 1; i <= step; i += 1) {
-    validCells.push(
-      currentPosition + i,
-      currentPosition - i,
-      currentPosition + i * 7,
-      currentPosition - i * 7,
-      currentPosition + i * 8,
-      currentPosition - i * 8,
-      currentPosition + i * 9,
-      currentPosition - i * 9
-    );
-  }
-  if (validCells.includes(possiblePosition)) {
-    return true;
+  const newArrayOfCoordinates = twoDimensionalBoard();
+  const currentDot = newArrayOfCoordinates[currentPosition];
+  const possibleDot = newArrayOfCoordinates[possiblePosition];
+
+  const modX = Math.abs(currentDot.x - possibleDot.x);
+  const modY = Math.abs(currentDot.y - possibleDot.y);
+  const modXY = Math.abs(modX - modY);
+
+  if (modX <= step && modY <= step) {
+    if (modXY !== 1 || modX === 0 || modY === 0) {
+      return true;
+    }
   }
 }
 
 // функция проверки атаки
 function checkForAttack(currentPosition, possiblePosition, rangeAttack) {
-  const validCells = [];
-  for (let i = 1; i <= rangeAttack; i += 1) {
-    validCells.push(
-      currentPosition + i,
-      currentPosition - i,
-      currentPosition + i * 7,
-      currentPosition - i * 7,
-      currentPosition + i * 8,
-      currentPosition - i * 8,
-      currentPosition + i * 9,
-      currentPosition - i * 9
-    );
-  }
-  if (validCells.includes(possiblePosition)) {
-    return true;
+  const newArrayOfCoordinates = twoDimensionalBoard();
+  const currentDot = newArrayOfCoordinates[currentPosition];
+  const possibleDot = newArrayOfCoordinates[possiblePosition];
+
+  const modX = Math.abs(currentDot.x - possibleDot.x);
+  const modY = Math.abs(currentDot.y - possibleDot.y);
+  const modXY = Math.abs(modX - modY);
+
+  if (modX <= rangeAttack && modY <= rangeAttack) {
+    if (modXY !== 1 || modX === 0 || modY === 0) {
+      return true;
+    }
   }
 }
