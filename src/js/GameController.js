@@ -299,11 +299,8 @@ function checkForAttack(currentPosition, possiblePosition, rangeAttack) {
 
   const modX = Math.abs(currentDot.x - possibleDot.x);
   const modY = Math.abs(currentDot.y - possibleDot.y);
-  const modXY = Math.abs(modX - modY);
 
   if (modX <= rangeAttack && modY <= rangeAttack) {
-    if (modXY !== 1 || modX === 0 || modY === 0) {
-      return true;
-    }
+    return true;
   }
 }
