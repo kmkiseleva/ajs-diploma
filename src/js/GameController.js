@@ -46,14 +46,11 @@ export default class GameController {
       6, 7, 14, 15, 22, 23, 30, 31, 38, 39, 46, 47, 54, 55, 62, 63,
     ];
     this.setPositions(userTeam, computerTeam);
-    this.gamePlay.redrawPositions([
-      ...this.userTeamWithPositions,
-      ...this.computerTeamWithPositions,
-    ]);
     this.players = [
       ...this.userTeamWithPositions,
       ...this.computerTeamWithPositions,
     ];
+    this.gamePlay.redrawPositions(this.players);
 
     // возможность ходов и атак
     this.stepPossibility = false;
@@ -198,17 +195,14 @@ export default class GameController {
       let currentPosition = this.selectedChar.position;
       if (this.stepPossibility) {
         this.selectedChar.position = index;
-        this.gamePlay.redrawPositions([
-          ...this.userTeamWithPositions,
-          ...this.computerTeamWithPositions,
-        ]);
+        this.gamePlay.redrawPositions(this.players);
         this.gamePlay.selectCell(index);
         this.gamePlay.deselectCell(currentPosition);
-        // this.userTurn = false;
       }
     }
 
-    // атака выбранного игрока на допустимую ячейку с компьютерным игроком
+    // атака выбранного игрока на допустимую ячейку с компьютерным игроком и
+    // удаление атакуемого игрока, если его здоровье стало <= 0
     if (
       this.selectedChar &&
       currentChar &&
@@ -224,12 +218,11 @@ export default class GameController {
         attacker.character.attack * 0.1
       );
       target.character.damage(damagePoints);
-      this.gamePlay.redrawPositions([
-        ...this.userTeamWithPositions,
-        ...this.computerTeamWithPositions,
-      ]);
+      const livePlayers = this.players.filter(
+        (char) => char.character.health > 0
+      );
+      this.gamePlay.redrawPositions(livePlayers);
       this.gamePlay.showDamage(index, damagePoints);
-      // this.userTurn = false;
     }
   }
 
@@ -239,6 +232,69 @@ export default class GameController {
     if (this.selectedChar && this.selectedChar.position !== index) {
       this.gamePlay.deselectCell(index);
     }
+  }
+
+  // действия в конце хода
+  finalOfEveryTurn() {
+    // очередность ходов
+    if (this.userTurn) {
+      this.userTurn = false;
+      this.computerTurn();
+    } else {
+      this.userTurn = true;
+    }
+
+    // очистка поля от выделений
+    this.gamePlay.cells.forEach((cell) =>
+      this.gamePlay.deselectCell(this.gamePlay.cells.indexOf(cell))
+    );
+
+    // удаление погибших
+    if (this.selectedChar && this.selectedChar.character.health <= 0) {
+      this.selectedChar = null;
+    }
+
+    // отрисовка персонажей с учетом изменений
+    this.gamePlay.redrawPositions(this.players);
+
+    if (this.selectedChar) {
+      this.gamePlay.selectCell(this.selectedChar.position);
+    }
+
+    // команда компьютера мертва => переход на уровень выше
+    if (this.computerTeamWithPositions.length === 0) {
+      this.toNextLevel();
+      return;
+    }
+
+    if (this.userTeamWithPositions.length === 0) {
+      this.theEnd();
+      GamePlay.showMessage("Game Over!");
+      return;
+    }
+  }
+
+  toNextLevel() {
+    if (this.currentLevel === 4) {
+      GamePlay.showMessage("You Win!");
+      return;
+    } else {
+      this.currentLevel += 1;
+      GamePlay.showMessage("New Level");
+    }
+
+    this.gamePlay.drawUi(themes[this.currentLevel - 1]);
+  }
+
+  theEnd() {
+    this.blockTheField();
+    this.gamePlay.redrawPositions(this.players);
+  }
+
+  blockTheField() {
+    this.clickCellsListener = [];
+    this.enterOnCellsListener = [];
+    this.leaveCellsListener = [];
   }
 
   onNewGame() {
@@ -252,7 +308,6 @@ export default class GameController {
     const savingTheGame = {
       level: this.currentLevel,
       scores: this.scores,
-      teams: this.players,
       turn: this.userTurn,
       players: this.players,
     };
@@ -260,7 +315,21 @@ export default class GameController {
     this.stateService.save(GameState.from(savingTheGame));
   }
 
-  onLoadGame() {}
+  onLoadGame() {
+    const savedGame = GameState.from(this.stateService.load());
+
+    if (!savedGame) {
+      throw new Error("There is no saved game");
+    }
+
+    this.currentLevel = savedGame.level;
+    this.scores = savedGame.scores;
+    this.userTurn = savedGame.turn;
+    this.players = savedGame.players;
+
+    this.gamePlay.drawUi(themes[this.currentLevel - 1]);
+    this.gamePlay.redrawPositions(this.players);
+  }
 }
 
 // дополнительные функции
