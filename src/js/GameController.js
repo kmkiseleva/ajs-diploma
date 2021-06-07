@@ -3,7 +3,6 @@ import GameState from "./GameState";
 import cursors from "./cursors";
 import themes from "./themes";
 import { characterGenerator, generateTeam } from "./generators";
-import Character from "./Character";
 import PositionedCharacter from "./PositionedCharacter";
 import Team from "./Team";
 
@@ -27,6 +26,7 @@ export default class GameController {
     this.loadGameListener();
   }
 
+  // начало игры
   startGame() {
     this.scores = 0;
     this.currentLevel = 1;
@@ -39,12 +39,14 @@ export default class GameController {
     const computerTeam = generateTeam(new Team().computerTeam, 1, 2);
     this.userTeamWithPositions = [];
     this.computerTeamWithPositions = [];
+
     this.userPositions = [
       0, 1, 8, 9, 16, 17, 24, 25, 32, 33, 40, 41, 48, 49, 56, 57,
     ];
     this.computerPositions = [
       6, 7, 14, 15, 22, 23, 30, 31, 38, 39, 46, 47, 54, 55, 62, 63,
     ];
+
     this.setPositions(userTeam, computerTeam);
     this.players = [
       ...this.userTeamWithPositions,
@@ -144,6 +146,7 @@ export default class GameController {
         index,
         this.selectedChar.character.step
       );
+
       if (this.stepPossibility) {
         this.gamePlay.selectCell(index, "green");
         this.gamePlay.setCursor(cursors.pointer);
@@ -189,8 +192,7 @@ export default class GameController {
     if (
       this.selectedChar &&
       !currentChar &&
-      this.selectedChar.position !== index &&
-      this.userTurn
+      this.selectedChar.position !== index
     ) {
       let currentPosition = this.selectedChar.position;
       if (this.stepPossibility) {
@@ -208,8 +210,7 @@ export default class GameController {
       currentChar &&
       !currentChar.character.userPlayer &&
       this.selectedChar.position !== index &&
-      this.attackPossibility &&
-      this.userTurn
+      this.attackPossibility
     ) {
       const attacker = this.selectedChar;
       const target = currentChar;
@@ -218,11 +219,12 @@ export default class GameController {
         attacker.character.attack * 0.1
       );
       target.character.damage(damagePoints);
-      const livePlayers = this.players.filter(
-        (char) => char.character.health > 0
-      );
-      this.gamePlay.redrawPositions(livePlayers);
-      this.gamePlay.showDamage(index, damagePoints);
+
+      this.players = this.players.filter((char) => char.character.health > 0);
+      this.gamePlay.redrawPositions(this.players);
+      this.gamePlay
+        .showDamage(index, damagePoints)
+        .then(() => this.finalOfEveryTurn());
     }
   }
 
@@ -239,7 +241,7 @@ export default class GameController {
     // очередность ходов
     if (this.userTurn) {
       this.userTurn = false;
-      this.computerTurn();
+      // this.computerTurn();
     } else {
       this.userTurn = true;
     }
@@ -262,16 +264,43 @@ export default class GameController {
     }
 
     // команда компьютера мертва => переход на уровень выше
-    if (this.computerTeamWithPositions.length === 0) {
+    if (
+      [...this.players].filter((char) => char.character.userPlayer === false)
+        .length === 0
+    ) {
       this.toNextLevel();
       return;
     }
 
-    if (this.userTeamWithPositions.length === 0) {
+    if (
+      [...this.players].filter((char) => char.character.userPlayer).length === 0
+    ) {
       this.theEnd();
       GamePlay.showMessage("Game Over!");
       return;
     }
+  }
+
+  computerTurn() {
+    // расстановка сил и команды
+    const pcTeam = [];
+    const userTeam = [];
+
+    this.players.forEach((char) => {
+      if (char.character.userPlayer) {
+        userTeam.push(char);
+      } else {
+        pcTeam.push(char);
+      }
+    });
+  }
+
+  // сделать ход
+  makeMove(char, index) {
+    this.players = [...this.players].filter((item) => item !== char);
+    char.position = index;
+    this.players.push(char);
+    this.finalOfEveryTurn();
   }
 
   toNextLevel() {
@@ -280,10 +309,20 @@ export default class GameController {
       return;
     } else {
       this.currentLevel += 1;
-      GamePlay.showMessage("New Level");
+      GamePlay.showMessage("New Level!");
     }
 
     this.gamePlay.drawUi(themes[this.currentLevel - 1]);
+
+    this.players = [
+      ...this.userTeamWithPositions,
+      ...this.computerTeamWithPositions,
+    ];
+    this.gamePlay.cells.forEach((cell) =>
+      this.gamePlay.deselectCell(this.gamePlay.cells.indexOf(cell))
+    );
+    this.selectedChar = null;
+    this.gamePlay.redrawPositions(this.players);
   }
 
   theEnd() {

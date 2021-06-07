@@ -33,6 +33,11 @@ body {
   cursor: pointer;
 }
 
+.btn:focus,
+.btn:active {
+  background-color: #0f0;
+}
+
 .controls {
   text-align: center;
   margin: 50px 0;
