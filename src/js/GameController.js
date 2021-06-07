@@ -303,6 +303,7 @@ export default class GameController {
     this.finalOfEveryTurn();
   }
 
+  // переход на следующий уровень или конец игры
   toNextLevel() {
     if (this.currentLevel === 4) {
       GamePlay.showMessage("You Win!");
@@ -312,12 +313,42 @@ export default class GameController {
       GamePlay.showMessage("New Level!");
     }
 
+    // отрисовка темы
     this.gamePlay.drawUi(themes[this.currentLevel - 1]);
+
+    // создание новых дополнительных игроков и обновление команд
+    let additionalUserChars;
+    if (this.currentLevel > 2) {
+      additionalUserChars = generateTeam(
+        new Team().userTeam,
+        this.currentLevel - 1,
+        2
+      );
+    } else {
+      additionalUserChars = generateTeam(
+        new Team().userTeam,
+        this.currentLevel - 1,
+        1
+      );
+    }
+    const newUserChars = [...this.players].map((char) => char.character);
+    const newUserTeam = [...newUserChars, ...additionalUserChars];
+
+    const newComputerChars = generateTeam(
+      new Team().computerTeam,
+      this.currentLevel,
+      newUserTeam.length
+    );
+
+    this.setPositions(newUserTeam, newComputerChars);
+    this.computerTeamWithPositions.pop();
 
     this.players = [
       ...this.userTeamWithPositions,
       ...this.computerTeamWithPositions,
     ];
+
+    // отрисовка поля с учетом изменений
     this.gamePlay.cells.forEach((cell) =>
       this.gamePlay.deselectCell(this.gamePlay.cells.indexOf(cell))
     );
