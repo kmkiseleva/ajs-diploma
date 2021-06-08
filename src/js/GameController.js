@@ -2,7 +2,7 @@ import GamePlay from "./GamePlay";
 import GameState from "./GameState";
 import cursors from "./cursors";
 import themes from "./themes";
-import { characterGenerator, generateTeam } from "./generators";
+import { generateTeam } from "./generators";
 import PositionedCharacter from "./PositionedCharacter";
 import Team from "./Team";
 
@@ -33,6 +33,7 @@ export default class GameController {
     this.gamePlay.drawUi(themes[this.currentLevel - 1]);
     this.selectedChar = null;
     this.userTurn = true;
+    this.displayTheLevel();
 
     // создание команды
     const userTeam = generateTeam(new Team().userTeam, 1, 2);
@@ -59,66 +60,36 @@ export default class GameController {
     this.attackPossibility = false;
   }
 
-  // установка первоначальных позиций игроков
+  // установка игроков на первоначальные доступные позиции (1, 2, 7, 8 столбцы)
   setPositions(userTeam, computerTeam) {
-    this.userTeamWithPositions.push(
-      new PositionedCharacter(
-        userTeam[0],
-        this.userPositions[
-          Math.floor(Math.random() * this.userPositions.length)
-        ]
-      )
-    );
-    this.userTeamWithPositions.push(
-      new PositionedCharacter(
-        userTeam[1],
-        this.userPositions[
-          Math.floor(Math.random() * this.userPositions.length)
-        ]
-      )
-    );
+    userTeam.forEach((char) => {
+      this.userTeamWithPositions.push(
+        new PositionedCharacter(
+          char,
+          this.userPositions[
+            Math.floor(Math.random() * this.userPositions.length)
+          ]
+        )
+      );
+    });
 
-    this.computerTeamWithPositions.push(
-      new PositionedCharacter(
-        computerTeam[0],
-        this.computerPositions[
-          Math.floor(Math.random() * this.computerPositions.length)
-        ]
-      )
-    );
-    this.computerTeamWithPositions.push(
-      new PositionedCharacter(
-        computerTeam[1],
-        this.computerPositions[
-          Math.floor(Math.random() * this.computerPositions.length)
-        ]
-      )
-    );
+    computerTeam.forEach((char) => {
+      this.computerTeamWithPositions.push(
+        new PositionedCharacter(
+          char,
+          this.computerPositions[
+            Math.floor(Math.random() * this.userPositions.length)
+          ]
+        )
+      );
+    });
   }
 
-  // Events
-  enterOnCellsListener() {
-    this.gamePlay.addCellEnterListener(this.onCellEnter.bind(this));
-  }
-
-  clickCellsListener() {
-    this.gamePlay.addCellClickListener(this.onCellClick.bind(this));
-  }
-
-  leaveCellsListener() {
-    this.gamePlay.addCellLeaveListener(this.onCellLeave.bind(this));
-  }
-
-  newGameListener() {
-    this.gamePlay.addNewGameListener(this.onNewGame.bind(this));
-  }
-
-  saveGameListener() {
-    this.gamePlay.addSaveGameListener(this.onSaveGame.bind(this));
-  }
-
-  loadGameListener() {
-    this.gamePlay.addLoadGameListener(this.onLoadGame.bind(this));
+  // отрисовка уровня
+  displayTheLevel() {
+    const levelTextContent =
+      this.gamePlay.container.querySelector("#level span");
+    levelTextContent.textContent = this.currentLevel;
   }
 
   // ========================
@@ -178,9 +149,7 @@ export default class GameController {
       this.players.forEach((char) => this.gamePlay.deselectCell(char.position));
       this.gamePlay.selectCell(index);
       this.selectedChar = currentChar;
-    }
-
-    if (
+    } else if (
       currentChar &&
       !currentChar.character.userPlayer &&
       !this.attackPossibility
@@ -264,21 +233,80 @@ export default class GameController {
     }
 
     // команда компьютера мертва => переход на уровень выше
-    if (
-      [...this.players].filter((char) => char.character.userPlayer === false)
-        .length === 0
-    ) {
+    const deadCompPlayers = [...this.players].filter(
+      (char) => char.character.userPlayer === false
+    );
+    if (deadCompPlayers.length === 0) {
       this.toNextLevel();
-      return;
     }
 
+    // команда игрока мертва => конец игры
     if (
       [...this.players].filter((char) => char.character.userPlayer).length === 0
     ) {
-      this.theEnd();
       GamePlay.showMessage("Game Over!");
+      this.blockTheField();
       return;
     }
+  }
+
+  // переход на следующий уровень или конец игры
+  toNextLevel() {
+    if (this.currentLevel === 4) {
+      GamePlay.showMessage("You Win!");
+      this.blockTheField();
+      return;
+    } else {
+      this.currentLevel += 1;
+      GamePlay.showMessage("Welcome to New Level!");
+    }
+
+    // отрисовка темы
+    this.gamePlay.drawUi(themes[this.currentLevel - 1]);
+    this.displayTheLevel();
+
+    // создание новых дополнительных игроков и обновление команд
+
+    // команда игрока
+    let additionalUserChars;
+    if (this.currentLevel > 2) {
+      additionalUserChars = generateTeam(
+        new Team().userTeam,
+        this.currentLevel - 1,
+        2
+      );
+    } else {
+      additionalUserChars = generateTeam(
+        new Team().userTeam,
+        this.currentLevel - 1,
+        1
+      );
+    }
+    const oldUserChars = [...this.players].map((char) => char.character);
+    const newUserTeam = [...oldUserChars, ...additionalUserChars];
+
+    // команда компьютера
+    const newComputerTeam = generateTeam(
+      new Team().computerTeam,
+      this.currentLevel,
+      newUserTeam.length
+    );
+
+    this.userTeamWithPositions = [];
+    this.computerTeamWithPositions = [];
+    this.setPositions(newUserTeam, newComputerTeam);
+
+    this.players = [
+      ...this.userTeamWithPositions,
+      ...this.computerTeamWithPositions,
+    ];
+
+    // отрисовка поля с учетом изменений
+    this.gamePlay.cells.forEach((cell) =>
+      this.gamePlay.deselectCell(this.gamePlay.cells.indexOf(cell))
+    );
+    this.selectedChar = null;
+    this.gamePlay.redrawPositions(this.players);
   }
 
   computerTurn() {
@@ -301,64 +329,6 @@ export default class GameController {
     char.position = index;
     this.players.push(char);
     this.finalOfEveryTurn();
-  }
-
-  // переход на следующий уровень или конец игры
-  toNextLevel() {
-    if (this.currentLevel === 4) {
-      GamePlay.showMessage("You Win!");
-      return;
-    } else {
-      this.currentLevel += 1;
-      GamePlay.showMessage("New Level!");
-    }
-
-    // отрисовка темы
-    this.gamePlay.drawUi(themes[this.currentLevel - 1]);
-
-    // создание новых дополнительных игроков и обновление команд
-    let additionalUserChars;
-    if (this.currentLevel > 2) {
-      additionalUserChars = generateTeam(
-        new Team().userTeam,
-        this.currentLevel - 1,
-        2
-      );
-    } else {
-      additionalUserChars = generateTeam(
-        new Team().userTeam,
-        this.currentLevel - 1,
-        1
-      );
-    }
-    const newUserChars = [...this.players].map((char) => char.character);
-    const newUserTeam = [...newUserChars, ...additionalUserChars];
-
-    const newComputerChars = generateTeam(
-      new Team().computerTeam,
-      this.currentLevel,
-      newUserTeam.length
-    );
-
-    this.setPositions(newUserTeam, newComputerChars);
-    this.computerTeamWithPositions.pop();
-
-    this.players = [
-      ...this.userTeamWithPositions,
-      ...this.computerTeamWithPositions,
-    ];
-
-    // отрисовка поля с учетом изменений
-    this.gamePlay.cells.forEach((cell) =>
-      this.gamePlay.deselectCell(this.gamePlay.cells.indexOf(cell))
-    );
-    this.selectedChar = null;
-    this.gamePlay.redrawPositions(this.players);
-  }
-
-  theEnd() {
-    this.blockTheField();
-    this.gamePlay.redrawPositions(this.players);
   }
 
   blockTheField() {
@@ -399,6 +369,31 @@ export default class GameController {
 
     this.gamePlay.drawUi(themes[this.currentLevel - 1]);
     this.gamePlay.redrawPositions(this.players);
+  }
+
+  // Events
+  enterOnCellsListener() {
+    this.gamePlay.addCellEnterListener(this.onCellEnter.bind(this));
+  }
+
+  clickCellsListener() {
+    this.gamePlay.addCellClickListener(this.onCellClick.bind(this));
+  }
+
+  leaveCellsListener() {
+    this.gamePlay.addCellLeaveListener(this.onCellLeave.bind(this));
+  }
+
+  newGameListener() {
+    this.gamePlay.addNewGameListener(this.onNewGame.bind(this));
+  }
+
+  saveGameListener() {
+    this.gamePlay.addSaveGameListener(this.onSaveGame.bind(this));
+  }
+
+  loadGameListener() {
+    this.gamePlay.addLoadGameListener(this.onLoadGame.bind(this));
   }
 }
 

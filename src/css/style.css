@@ -57,6 +57,12 @@ body {
   grid-row-gap: 2px;
 }
 
+#level {
+  text-align: center;
+  font-size: 32px;
+  color: #fff;
+}
+
 .cell {
   position: relative;
 }
