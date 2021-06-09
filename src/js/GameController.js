@@ -326,9 +326,17 @@ export default class GameController {
       }
     });
 
-    // выбор рандомного персонажа для того, чтобы сделать ход
-    const selectedComputerChar =
+    // выбор рандомного игрока ПК
+    const randomComputerPlayer =
       computerTeam[Math.floor(Math.random() * computerTeam.length)];
+
+    let newPosition = randomComputerPlayer.position + 1;
+
+    this.makeMove(randomComputerPlayer, newPosition);
+
+    if (computerTeam.length === 0) {
+      this.toNextLevel();
+    }
   }
 
   // сделать ход
