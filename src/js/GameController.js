@@ -330,9 +330,34 @@ export default class GameController {
     const randomComputerPlayer =
       computerTeam[Math.floor(Math.random() * computerTeam.length)];
 
-    let newPosition = randomComputerPlayer.position + 1;
+    // занятые клетки
+    const occupiedCells = this.players.reduce((acc, prev) => {
+      acc.push(prev.position);
+      return acc;
+    }, []);
+    // возможные клетки
+    const validCells = new Array(64)
+      .fill(0)
+      .map((element, i) => (i += 1))
+      .filter((position) => !occupiedCells.includes(position));
 
-    this.makeMove(randomComputerPlayer, newPosition);
+    const newPosition = () => {
+      const index = Math.floor(Math.random() * validCells.length);
+      const stepIsPossible = checkForStep(
+        randomComputerPlayer.position,
+        validCells[index],
+        randomComputerPlayer.character.step
+      );
+      if (stepIsPossible) {
+        validCells.splice(index, 1);
+        return newPosition();
+      }
+      return validCells[index];
+    };
+
+    const newCell = newPosition();
+
+    this.makeMove(randomComputerPlayer, newCell);
 
     if (computerTeam.length === 0) {
       this.toNextLevel();
