@@ -164,11 +164,12 @@ export default class GameController {
       this.selectedChar.position !== index
     ) {
       let currentPosition = this.selectedChar.position;
-      if (this.stepPossibility) {
+      if (this.stepPossibility && this.userTurn) {
         this.selectedChar.position = index;
         this.gamePlay.redrawPositions(this.players);
         this.gamePlay.selectCell(index);
         this.gamePlay.deselectCell(currentPosition);
+        this.finalOfEveryTurn();
       }
     }
 
@@ -179,7 +180,8 @@ export default class GameController {
       currentChar &&
       !currentChar.character.userPlayer &&
       this.selectedChar.position !== index &&
-      this.attackPossibility
+      this.attackPossibility &&
+      this.userTurn
     ) {
       const attacker = this.selectedChar;
       const target = currentChar;
@@ -210,7 +212,7 @@ export default class GameController {
     // очередность ходов
     if (this.userTurn) {
       this.userTurn = false;
-      // this.computerTurn();
+      this.computerTurn();
     } else {
       this.userTurn = true;
     }
@@ -246,7 +248,6 @@ export default class GameController {
     ) {
       GamePlay.showMessage("Game Over!");
       this.blockTheField();
-      return;
     }
   }
 
@@ -255,15 +256,18 @@ export default class GameController {
     if (this.currentLevel === 4) {
       GamePlay.showMessage("You Win!");
       this.blockTheField();
-      return;
     } else {
       this.currentLevel += 1;
       GamePlay.showMessage("Welcome to New Level!");
     }
 
-    // отрисовка темы
+    // отрисовка уровня и темы
     this.gamePlay.drawUi(themes[this.currentLevel - 1]);
     this.displayTheLevel();
+
+    // подсчет очков и levelUp игроков
+    this.countingScores(this.players);
+    this.levelUpPlayers(this.players);
 
     // создание новых дополнительных игроков и обновление команд
 
@@ -311,16 +315,20 @@ export default class GameController {
 
   computerTurn() {
     // расстановка сил и команды
-    const pcTeam = [];
+    const computerTeam = [];
     const userTeam = [];
 
     this.players.forEach((char) => {
       if (char.character.userPlayer) {
         userTeam.push(char);
       } else {
-        pcTeam.push(char);
+        computerTeam.push(char);
       }
     });
+
+    // выбор рандомного персонажа для того, чтобы сделать ход
+    const selectedComputerChar =
+      computerTeam[Math.floor(Math.random() * computerTeam.length)];
   }
 
   // сделать ход
@@ -331,14 +339,35 @@ export default class GameController {
     this.finalOfEveryTurn();
   }
 
+  // подсчет очков игроков
+  countingScores(players) {
+    this.scores += players.reduce((acc, prev) => {
+      if (prev.character.userPlayer) {
+        acc += prev.character.health;
+      }
+      return acc;
+    }, 0);
+  }
+
+  // levelUp оставшихся игроков
+  levelUpPlayers(players) {
+    players.reduce((acc, prev) => {
+      prev.character.levelUp();
+      acc.push(prev);
+      return acc;
+    }, []);
+  }
+
   blockTheField() {
     this.clickCellsListener = [];
     this.enterOnCellsListener = [];
     this.leaveCellsListener = [];
   }
 
+  // кнопки интерфейса
   onNewGame() {
     this.startGame();
+    this.countingScores(this.players);
     this.clickCellsListener();
     this.enterOnCellsListener();
     this.leaveCellsListener();
@@ -368,6 +397,7 @@ export default class GameController {
     this.players = savedGame.players;
 
     this.gamePlay.drawUi(themes[this.currentLevel - 1]);
+    this.displayTheLevel();
     this.gamePlay.redrawPositions(this.players);
   }
 
