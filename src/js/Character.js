@@ -31,6 +31,7 @@ export default class Character {
     );
   }
 
+  // метод подсчета урона игрока
   damage(scores) {
     if (this.health > 0) {
       this.health -= scores;

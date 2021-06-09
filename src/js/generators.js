@@ -13,6 +13,7 @@ export function* characterGenerator(allowedTypes, maxLevel) {
   }
 }
 
+// генератор команды (типы, уровень игрока, количество игроков)
 export function generateTeam(allowedTypes, maxLevel, characterCount) {
   const dreamTeam = [];
   for (let i = 0; i < characterCount; i += 1) {

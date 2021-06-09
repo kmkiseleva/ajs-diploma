@@ -7,6 +7,7 @@ export default class GameStateService {
     this.storage.setItem("state", JSON.stringify(state));
   }
 
+  // загрузка сохраненного состояния игры
   load() {
     try {
       return JSON.parse(this.storage.getItem("state"));
