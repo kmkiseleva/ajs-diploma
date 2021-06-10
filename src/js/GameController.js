@@ -330,34 +330,46 @@ export default class GameController {
     const randomComputerPlayer =
       computerTeam[Math.floor(Math.random() * computerTeam.length)];
 
-    // занятые клетки
-    const occupiedCells = this.players.reduce((acc, prev) => {
-      acc.push(prev.position);
-      return acc;
-    }, []);
+    // уже занятые клетки
+    let occupiedCells = [];
+    this.players.forEach((char) => {
+      occupiedCells.push(char.position);
+    });
+
     // возможные клетки
-    const validCells = new Array(64)
+    let validCells = new Array(64)
       .fill(0)
       .map((element, i) => (i += 1))
       .filter((position) => !occupiedCells.includes(position));
 
-    const newPosition = () => {
+    // функция-генератор доступной ячейки для хода ПК
+    function generateNewPosition(player) {
       const index = Math.floor(Math.random() * validCells.length);
       const stepIsPossible = checkForStep(
-        randomComputerPlayer.position,
+        player.position,
         validCells[index],
-        randomComputerPlayer.character.step
+        player.character.step
       );
+
       if (stepIsPossible) {
-        validCells.splice(index, 1);
-        return newPosition();
+        return;
       }
+
       return validCells[index];
-    };
+    }
 
-    const newCell = newPosition();
+    let newCell = generateNewPosition(randomComputerPlayer);
 
-    this.makeMove(randomComputerPlayer, newCell);
+    try {
+      this.makeMove(randomComputerPlayer, newCell);
+    } catch (e) {
+      console.log(e);
+      console.log(newCell);
+      console.log(generateNewPosition(randomComputerPlayer));
+      console.log(validCells[index]);
+    }
+
+    // this.makeMove(randomComputerPlayer, newCell);
 
     if (computerTeam.length === 0) {
       this.toNextLevel();
