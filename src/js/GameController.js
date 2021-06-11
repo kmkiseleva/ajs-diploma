@@ -351,25 +351,24 @@ export default class GameController {
         player.character.step
       );
 
-      if (stepIsPossible) {
-        return;
+      if (!stepIsPossible) {
+        return generateNewPosition(player);
       }
 
       return validCells[index];
     }
 
-    let newCell = generateNewPosition(randomComputerPlayer);
+    let newCell;
 
     try {
-      this.makeMove(randomComputerPlayer, newCell);
+      newCell = generateNewPosition(randomComputerPlayer);      
     } catch (e) {
       console.log(e);
-      console.log(newCell);
-      console.log(generateNewPosition(randomComputerPlayer));
-      console.log(validCells[index]);
+      debugger;
     }
 
-    // this.makeMove(randomComputerPlayer, newCell);
+    
+    this.makeMove(randomComputerPlayer, newCell);
 
     if (computerTeam.length === 0) {
       this.toNextLevel();
