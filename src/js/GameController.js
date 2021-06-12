@@ -230,14 +230,6 @@ export default class GameController {
 
   // действия в конце хода
   finalOfEveryTurn() {
-    // очередность ходов
-    if (this.userTurn) {
-      this.userTurn = false;
-      this.computerTurn();
-    } else {
-      this.userTurn = true;
-    }
-
     // очистка поля от выделений
     this.gamePlay.cells.forEach((cell) =>
       this.gamePlay.deselectCell(this.gamePlay.cells.indexOf(cell))
@@ -248,27 +240,36 @@ export default class GameController {
       this.selectedChar = null;
     }
 
-    // отрисовка персонажей с учетом изменений
-    this.gamePlay.redrawPositions(this.players);
-
-    if (this.selectedChar) {
-      this.gamePlay.selectCell(this.selectedChar.position);
-    }
-
     // команда компьютера мертва => переход на уровень выше
     const deadCompPlayers = [...this.players].filter(
       (char) => char.character.userPlayer === false
     );
     if (deadCompPlayers.length === 0) {
       this.toNextLevel();
+      return;      
     }
 
     // команда игрока мертва => конец игры
-    if (
-      [...this.players].filter((char) => char.character.userPlayer).length === 0
+    const arrayOfUserPlayers = [...this.players].filter((char) => char.character.userPlayer);
+    if (arrayOfUserPlayers.length === 0
     ) {
       GamePlay.showMessage("Game Over!");
       this.blockTheField();
+      return;
+    }
+
+    // отрисовка персонажей с учетом изменений
+    this.gamePlay.redrawPositions(this.players);
+    if (this.selectedChar) {
+      this.gamePlay.selectCell(this.selectedChar.position);
+    }
+
+    // очередность ходов
+    if (this.userTurn) {
+      this.userTurn = false;
+      this.computerTurn();
+      } else {
+      this.userTurn = true;
     }
   }
 
