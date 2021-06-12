@@ -49,6 +49,7 @@ export default class GameController {
     ];
 
     this.setPositions(userTeam, computerTeam);
+    this.checkSetPositions(userTeam, computerTeam);
     this.players = [
       ...this.userTeamWithPositions,
       ...this.computerTeamWithPositions,
@@ -83,6 +84,27 @@ export default class GameController {
         )
       );
     });
+  }
+
+  // проверка расстановки позиций
+  checkSetPositions(userTeam, computerTeam) {
+    const arrayOfUserPositions = [];
+    const arrayOfComputerPositions = [];
+
+    this.userTeamWithPositions.forEach(char => {
+      arrayOfUserPositions.push(char.position);
+    })
+    this.computerTeamWithPositions.forEach(char => {
+      arrayOfComputerPositions.push(char.position);
+    })
+
+    if (hasDuplicates(arrayOfUserPositions) || hasDuplicates(arrayOfComputerPositions)) {
+      this.userTeamWithPositions = [];
+      this.computerTeamWithPositions = [];          
+      this.setPositions(userTeam, computerTeam);
+    } else {
+      return;
+    }
   }
 
   // отрисовка уровня
@@ -180,8 +202,7 @@ export default class GameController {
       currentChar &&
       !currentChar.character.userPlayer &&
       this.selectedChar.position !== index &&
-      this.attackPossibility &&
-      this.userTurn
+      this.attackPossibility
     ) {
       const attacker = this.selectedChar;
       const target = currentChar;
@@ -339,7 +360,7 @@ export default class GameController {
     // возможные клетки
     let validCells = new Array(64)
       .fill(0)
-      .map((element, i) => (i += 1))
+      .map((element, i) => (i++))
       .filter((position) => !occupiedCells.includes(position));
 
     // функция-генератор доступной ячейки для хода ПК
@@ -358,21 +379,8 @@ export default class GameController {
       return validCells[index];
     }
 
-    let newCell;
-
-    try {
-      newCell = generateNewPosition(randomComputerPlayer);      
-    } catch (e) {
-      console.log(e);
-      debugger;
-    }
-
-    
+    let newCell = generateNewPosition(randomComputerPlayer);    
     this.makeMove(randomComputerPlayer, newCell);
-
-    if (computerTeam.length === 0) {
-      this.toNextLevel();
-    }
   }
 
   // сделать ход
@@ -473,12 +481,25 @@ export default class GameController {
 
 // дополнительные функции
 
+// проверка дубликатов при расстановке позиций
+function hasDuplicates(array) {
+  let valuesSoFar = [];
+  for (let i = 0; i < array.length; ++i) {
+      let value = array[i];
+      if (valuesSoFar.indexOf(value) !== -1) {
+          return true;
+      }
+      valuesSoFar.push(value);
+  }
+  return false;
+}
+
 // перевод поля в двумерную плоскость
 
 function twoDimensionalBoard() {
   return new Array(64)
     .fill(0)
-    .map((item, index) => (index += 1))
+    .map((item, index) => (index++))
     .map((item, index) => ({ x: index % 8, y: Math.floor(index / 8) }));
 }
 
@@ -495,7 +516,11 @@ function checkForStep(currentPosition, possiblePosition, step) {
   if (modX <= step && modY <= step) {
     if (modXY !== 1 || modX === 0 || modY === 0) {
       return true;
+    } else {
+      return false;
     }
+  } else {
+    return false;
   }
 }
 
@@ -510,5 +535,7 @@ function checkForAttack(currentPosition, possiblePosition, rangeAttack) {
 
   if (modX <= rangeAttack && modY <= rangeAttack) {
     return true;
+  } else {
+    return false;
   }
 }
