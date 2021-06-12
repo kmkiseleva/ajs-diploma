@@ -206,10 +206,11 @@ export default class GameController {
     ) {
       const attacker = this.selectedChar;
       const target = currentChar;
-      const damagePoints = Math.max(
+      const damagePoints = +Math.max(
         attacker.character.attack - target.character.defence,
         attacker.character.attack * 0.1
-      );
+      ).toFixed();
+
       target.character.damage(damagePoints);
 
       this.players = this.players.filter((char) => char.character.health > 0);
@@ -275,11 +276,13 @@ export default class GameController {
 
   // переход на следующий уровень или конец игры
   toNextLevel() {
-    if (this.currentLevel === 4) {
+    this.currentLevel += 1;    
+
+    if (this.currentLevel > 4) {
       GamePlay.showMessage("You Win!");
-      this.blockTheField();
+      this.endOfGame();
+      return;
     } else {
-      this.currentLevel += 1;
       GamePlay.showMessage("Welcome to New Level!");
     }
 
@@ -321,6 +324,7 @@ export default class GameController {
     this.userTeamWithPositions = [];
     this.computerTeamWithPositions = [];
     this.setPositions(newUserTeam, newComputerTeam);
+    this.checkSetPositions(newUserTeam, newComputerTeam);
 
     this.players = [
       ...this.userTeamWithPositions,
@@ -415,6 +419,10 @@ export default class GameController {
     this.clickCellsListener = [];
     this.enterOnCellsListener = [];
     this.leaveCellsListener = [];
+  }
+
+  endOfGame() {
+    this.blockTheField();
   }
 
   // кнопки интерфейса
