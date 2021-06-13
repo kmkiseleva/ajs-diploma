@@ -1,4 +1,4 @@
-const themes = ["prairie", "desert", "arctic", "mountain"];
+const themes = ['prairie', 'desert', 'arctic', 'mountain'];
 
 export default themes;
 

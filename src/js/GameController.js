@@ -1,10 +1,11 @@
-import GamePlay from "./GamePlay";
-import GameState from "./GameState";
-import cursors from "./cursors";
-import themes from "./themes";
-import { generateTeam } from "./generators";
-import PositionedCharacter from "./PositionedCharacter";
-import Team from "./Team";
+/* eslint-disable no-use-before-define */
+import GamePlay from './GamePlay';
+import GameState from './GameState';
+import cursors from './cursors';
+import themes from './themes';
+import { generateTeam } from './generators';
+import PositionedCharacter from './PositionedCharacter';
+import Team from './Team';
 
 export default class GameController {
   constructor(gamePlay, stateService) {
@@ -69,8 +70,8 @@ export default class GameController {
           char,
           this.userPositions[
             Math.floor(Math.random() * this.userPositions.length)
-          ]
-        )
+          ],
+        ),
       );
     });
 
@@ -80,8 +81,8 @@ export default class GameController {
           char,
           this.computerPositions[
             Math.floor(Math.random() * this.userPositions.length)
-          ]
-        )
+          ],
+        ),
       );
     });
   }
@@ -91,26 +92,23 @@ export default class GameController {
     const arrayOfUserPositions = [];
     const arrayOfComputerPositions = [];
 
-    this.userTeamWithPositions.forEach(char => {
+    this.userTeamWithPositions.forEach((char) => {
       arrayOfUserPositions.push(char.position);
-    })
-    this.computerTeamWithPositions.forEach(char => {
+    });
+    this.computerTeamWithPositions.forEach((char) => {
       arrayOfComputerPositions.push(char.position);
-    })
+    });
 
     if (hasDuplicates(arrayOfUserPositions) || hasDuplicates(arrayOfComputerPositions)) {
       this.userTeamWithPositions = [];
-      this.computerTeamWithPositions = [];          
+      this.computerTeamWithPositions = [];
       this.setPositions(userTeam, computerTeam);
-    } else {
-      return;
     }
   }
 
   // отрисовка уровня
   displayTheLevel() {
-    const levelTextContent =
-      this.gamePlay.container.querySelector("#level span");
+    const levelTextContent = this.gamePlay.container.querySelector('#level span');
     levelTextContent.textContent = this.currentLevel;
   }
 
@@ -122,11 +120,13 @@ export default class GameController {
 
     // всплытие информации об игроке при наведении
     if (currentChar) {
-      const { level, attack, defence, health } = currentChar.character;
+      const {
+        level, attack, defence, health,
+      } = currentChar.character;
       this.gamePlay.setCursor(cursors.pointer);
       this.gamePlay.showCellTooltip(
         `🎖${level} ⚔${attack} 🛡${defence} ❤${health}`,
-        index
+        index,
       );
     } else {
       this.gamePlay.setCursor(cursors.auto);
@@ -137,11 +137,11 @@ export default class GameController {
       this.stepPossibility = checkForStep(
         this.selectedChar.position,
         index,
-        this.selectedChar.character.step
+        this.selectedChar.character.step,
       );
 
       if (this.stepPossibility) {
-        this.gamePlay.selectCell(index, "green");
+        this.gamePlay.selectCell(index, 'green');
         this.gamePlay.setCursor(cursors.pointer);
       }
     }
@@ -151,10 +151,10 @@ export default class GameController {
       this.attackPossibility = checkForAttack(
         this.selectedChar.position,
         index,
-        this.selectedChar.character.rangeAttack
+        this.selectedChar.character.rangeAttack,
       );
       if (this.attackPossibility) {
-        this.gamePlay.selectCell(index, "red");
+        this.gamePlay.selectCell(index, 'red');
         this.gamePlay.setCursor(cursors.crosshair);
       } else {
         this.gamePlay.setCursor(cursors.notallowed);
@@ -172,20 +172,20 @@ export default class GameController {
       this.gamePlay.selectCell(index);
       this.selectedChar = currentChar;
     } else if (
-      currentChar &&
-      !currentChar.character.userPlayer &&
-      !this.attackPossibility
+      currentChar
+      && !currentChar.character.userPlayer
+      && !this.attackPossibility
     ) {
-      GamePlay.showError("This is a computer player! Choose your one.");
+      GamePlay.showError('This is a computer player! Choose your one.');
     }
 
     // ход выбранного игрока в допустимую ячейку
     if (
-      this.selectedChar &&
-      !currentChar &&
-      this.selectedChar.position !== index
+      this.selectedChar
+      && !currentChar
+      && this.selectedChar.position !== index
     ) {
-      let currentPosition = this.selectedChar.position;
+      const currentPosition = this.selectedChar.position;
       if (this.stepPossibility && this.userTurn) {
         this.selectedChar.position = index;
         this.gamePlay.redrawPositions(this.players);
@@ -198,17 +198,17 @@ export default class GameController {
     // атака выбранного игрока на допустимую ячейку с компьютерным игроком и
     // удаление атакуемого игрока, если его здоровье стало <= 0
     if (
-      this.selectedChar &&
-      currentChar &&
-      !currentChar.character.userPlayer &&
-      this.selectedChar.position !== index &&
-      this.attackPossibility
+      this.selectedChar
+      && currentChar
+      && !currentChar.character.userPlayer
+      && this.selectedChar.position !== index
+      && this.attackPossibility
     ) {
       const attacker = this.selectedChar;
       const target = currentChar;
       const damagePoints = +Math.max(
         attacker.character.attack - target.character.defence,
-        attacker.character.attack * 0.1
+        attacker.character.attack * 0.1,
       ).toFixed();
 
       target.character.damage(damagePoints);
@@ -232,9 +232,7 @@ export default class GameController {
   // действия в конце хода
   finalOfEveryTurn() {
     // очистка поля от выделений
-    this.gamePlay.cells.forEach((cell) =>
-      this.gamePlay.deselectCell(this.gamePlay.cells.indexOf(cell))
-    );
+    this.gamePlay.cells.forEach((cell) => this.gamePlay.deselectCell(this.gamePlay.cells.indexOf(cell)));
 
     // удаление погибших
     if (this.selectedChar && this.selectedChar.character.health <= 0) {
@@ -243,18 +241,18 @@ export default class GameController {
 
     // команда компьютера мертва => переход на уровень выше
     const deadCompPlayers = [...this.players].filter(
-      (char) => char.character.userPlayer === false
+      (char) => char.character.userPlayer === false,
     );
     if (deadCompPlayers.length === 0) {
       this.toNextLevel();
-      return;      
+      return;
     }
 
     // команда игрока мертва => конец игры
     const arrayOfUserPlayers = [...this.players].filter((char) => char.character.userPlayer);
     if (arrayOfUserPlayers.length === 0
     ) {
-      GamePlay.showMessage("Game Over!");
+      GamePlay.showMessage('Game Over!');
       this.blockTheField();
       return;
     }
@@ -269,22 +267,21 @@ export default class GameController {
     if (this.userTurn) {
       this.userTurn = false;
       this.computerTurn();
-      } else {
+    } else {
       this.userTurn = true;
     }
   }
 
   // переход на следующий уровень или конец игры
   toNextLevel() {
-    this.currentLevel += 1;    
+    this.currentLevel += 1;
 
     if (this.currentLevel > 4) {
-      GamePlay.showMessage("You Win!");
+      GamePlay.showMessage('You Win!');
       this.endOfGame();
       return;
-    } else {
-      GamePlay.showMessage("Welcome to New Level!");
     }
+    GamePlay.showMessage('Welcome to New Level!');
 
     // отрисовка уровня и темы
     this.gamePlay.drawUi(themes[this.currentLevel - 1]);
@@ -302,13 +299,13 @@ export default class GameController {
       additionalUserChars = generateTeam(
         new Team().userTeam,
         this.currentLevel - 1,
-        2
+        2,
       );
     } else {
       additionalUserChars = generateTeam(
         new Team().userTeam,
         this.currentLevel - 1,
-        1
+        1,
       );
     }
     const oldUserChars = [...this.players].map((char) => char.character);
@@ -318,7 +315,7 @@ export default class GameController {
     const newComputerTeam = generateTeam(
       new Team().computerTeam,
       this.currentLevel,
-      newUserTeam.length
+      newUserTeam.length,
     );
 
     this.userTeamWithPositions = [];
@@ -332,9 +329,7 @@ export default class GameController {
     ];
 
     // отрисовка поля с учетом изменений
-    this.gamePlay.cells.forEach((cell) =>
-      this.gamePlay.deselectCell(this.gamePlay.cells.indexOf(cell))
-    );
+    this.gamePlay.cells.forEach((cell) => this.gamePlay.deselectCell(this.gamePlay.cells.indexOf(cell)));
     this.selectedChar = null;
     this.gamePlay.redrawPositions(this.players);
   }
@@ -353,17 +348,16 @@ export default class GameController {
     });
 
     // выбор рандомного игрока ПК
-    const randomComputerPlayer =
-      computerTeam[Math.floor(Math.random() * computerTeam.length)];
+    const randomComputerPlayer = computerTeam[Math.floor(Math.random() * computerTeam.length)];
 
     // уже занятые клетки
-    let occupiedCells = [];
+    const occupiedCells = [];
     this.players.forEach((char) => {
       occupiedCells.push(char.position);
     });
 
     // возможные клетки
-    let validCells = new Array(64)
+    const validCells = new Array(64)
       .fill(0)
       .map((element, i) => (i++))
       .filter((position) => !occupiedCells.includes(position));
@@ -374,7 +368,7 @@ export default class GameController {
       const stepIsPossible = checkForStep(
         player.position,
         validCells[index],
-        player.character.step
+        player.character.step,
       );
 
       if (!stepIsPossible) {
@@ -384,7 +378,7 @@ export default class GameController {
       return validCells[index];
     }
 
-    let newCell = generateNewPosition(randomComputerPlayer);    
+    const newCell = generateNewPosition(randomComputerPlayer);
     this.makeMove(randomComputerPlayer, newCell);
   }
 
@@ -406,6 +400,7 @@ export default class GameController {
     }, 0);
   }
 
+  /* eslint-disable class-methods-use-this */
   // levelUp оставшихся игроков
   levelUpPlayers(players) {
     players.reduce((acc, prev) => {
@@ -414,6 +409,7 @@ export default class GameController {
       return acc;
     }, []);
   }
+  /* eslint-enable class-methods-use-this */
 
   blockTheField() {
     this.clickCellsListener = [];
@@ -449,7 +445,7 @@ export default class GameController {
     const savedGame = GameState.from(this.stateService.load());
 
     if (!savedGame) {
-      throw new Error("There is no saved game");
+      throw new Error('There is no saved game');
     }
 
     this.currentLevel = savedGame.level;
@@ -492,13 +488,13 @@ export default class GameController {
 
 // проверка дубликатов при расстановке позиций
 function hasDuplicates(array) {
-  let valuesSoFar = [];
+  const valuesSoFar = [];
   for (let i = 0; i < array.length; ++i) {
-      let value = array[i];
-      if (valuesSoFar.indexOf(value) !== -1) {
-          return true;
-      }
-      valuesSoFar.push(value);
+    const value = array[i];
+    if (valuesSoFar.indexOf(value) !== -1) {
+      return true;
+    }
+    valuesSoFar.push(value);
   }
   return false;
 }
@@ -525,12 +521,10 @@ function checkForStep(currentPosition, possiblePosition, step) {
   if (modX <= step && modY <= step) {
     if (modXY !== 1 || modX === 0 || modY === 0) {
       return true;
-    } else {
-      return false;
     }
-  } else {
     return false;
   }
+  return false;
 }
 
 // функция проверки атаки
@@ -544,7 +538,6 @@ function checkForAttack(currentPosition, possiblePosition, rangeAttack) {
 
   if (modX <= rangeAttack && modY <= rangeAttack) {
     return true;
-  } else {
-    return false;
   }
+  return false;
 }

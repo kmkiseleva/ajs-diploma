@@ -57,6 +57,7 @@ body {
 }
 
 #level {
+  margin-top: 20px;
   text-align: center;
   font-size: 32px;
   color: #fff;

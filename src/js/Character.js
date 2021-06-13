@@ -1,5 +1,5 @@
 export default class Character {
-  constructor(level, type = "generic") {
+  constructor(level, type = 'generic') {
     this.level = level;
     this.attack = 0;
     this.defence = 0;
@@ -15,7 +15,7 @@ export default class Character {
   levelUp() {
     this.level += 1;
     if (this.health === 0) {
-      throw new Error("The player has already died!");
+      throw new Error('The player has already died!');
     }
     this.health += 80;
     if (this.health > 100) {
@@ -23,11 +23,11 @@ export default class Character {
     }
     this.attack = Math.max(
       this.attack,
-      +(this.attack * (1.8 - (1 - this.health / 100))).toFixed()
+      +(this.attack * (1.8 - (1 - this.health / 100))).toFixed(),
     );
     this.defence = Math.max(
       this.defence,
-      +(this.defence * (1.8 - (1 - this.health / 100))).toFixed()
+      +(this.defence * (1.8 - (1 - this.health / 100))).toFixed(),
     );
   }
 
