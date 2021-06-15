@@ -30,13 +30,4 @@ export default class Character {
       +(this.defence * (1.8 - (1 - this.health / 100))).toFixed(),
     );
   }
-
-  // метод подсчета урона игрока
-  damage(scores) {
-    if (this.health > 0) {
-      this.health -= scores;
-    } else if (this.health < 0) {
-      this.health = 0;
-    }
-  }
 }

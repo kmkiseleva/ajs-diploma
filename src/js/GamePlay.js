@@ -238,4 +238,14 @@ export default class GamePlay {
       throw new Error('GamePlay not bind to DOM');
     }
   }
+
+  stopMultipleClick() {
+    this.cellClickListeners = [];
+  }
+
+  blockTheField() {
+    this.cellClickListeners = [];
+    this.cellEnterListeners = [];
+    this.cellLeaveListeners = [];
+  }
 }

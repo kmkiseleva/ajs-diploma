@@ -198,26 +198,13 @@ export default class GameController {
     // атака выбранного игрока на допустимую ячейку с компьютерным игроком и
     // удаление атакуемого игрока, если его здоровье стало <= 0
     if (
-      this.selectedChar
+      this.attackPossibility
+      && this.selectedChar
       && currentChar
       && !currentChar.character.userPlayer
       && this.selectedChar.position !== index
-      && this.attackPossibility
     ) {
-      const attacker = this.selectedChar;
-      const target = currentChar;
-      const damagePoints = +Math.max(
-        attacker.character.attack - target.character.defence,
-        attacker.character.attack * 0.1,
-      ).toFixed();
-
-      target.character.damage(damagePoints);
-
-      this.players = this.players.filter((char) => char.character.health > 0);
-      this.gamePlay.redrawPositions(this.players);
-      this.gamePlay
-        .showDamage(index, damagePoints)
-        .then(() => this.finalOfEveryTurn());
+      this.toAttack(this.selectedChar, currentChar, index);
     }
   }
 
@@ -232,7 +219,8 @@ export default class GameController {
   // действия в конце хода
   finalOfEveryTurn() {
     // очистка поля от выделений
-    this.gamePlay.cells.forEach((cell) => this.gamePlay.deselectCell(this.gamePlay.cells.indexOf(cell)));
+    const arrayOfCells = this.gamePlay.cells;
+    arrayOfCells.forEach((cell) => this.gamePlay.deselectCell(arrayOfCells.indexOf(cell)));
 
     // удаление погибших
     if (this.selectedChar && this.selectedChar.character.health <= 0) {
@@ -253,7 +241,7 @@ export default class GameController {
     if (arrayOfUserPlayers.length === 0
     ) {
       GamePlay.showMessage('Game Over!');
-      this.blockTheField();
+      this.gamePlay.blockTheField();
       return;
     }
 
@@ -289,10 +277,14 @@ export default class GameController {
 
     // подсчет очков и levelUp игроков
     this.countingScores(this.players);
-    this.levelUpPlayers(this.players);
+
+    this.players.reduce((acc, prev) => {
+      prev.character.levelUp();
+      acc.push(prev);
+      return acc;
+    }, []);
 
     // создание новых дополнительных игроков и обновление команд
-
     // команда игрока
     let additionalUserChars;
     if (this.currentLevel > 2) {
@@ -329,7 +321,8 @@ export default class GameController {
     ];
 
     // отрисовка поля с учетом изменений
-    this.gamePlay.cells.forEach((cell) => this.gamePlay.deselectCell(this.gamePlay.cells.indexOf(cell)));
+    const arrayCells = this.gamePlay.cells;
+    arrayCells.forEach((cell) => this.gamePlay.deselectCell(arrayCells.indexOf(cell)));
     this.selectedChar = null;
     this.gamePlay.redrawPositions(this.players);
   }
@@ -390,6 +383,31 @@ export default class GameController {
     this.finalOfEveryTurn();
   }
 
+  // атаковать
+  toAttack(attacker, target) {
+    this.gamePlay.stopMultipleClick();
+    if (!attacker || !target) {
+      return;
+    }
+    const index = target.position;
+    // расчет очков дамага
+    const damagePoints = +Math.max(
+      attacker.character.attack - target.character.defence,
+      attacker.character.attack * 0.1,
+    ).toFixed();
+
+    countingDamage(target, damagePoints);
+
+    this.players = this.players.filter((char) => char.character.health > 0);
+    this.gamePlay.redrawPositions(this.players);
+    this.gamePlay
+      .showDamage(index, damagePoints)
+      .then(() => {
+        this.clickCellsListener();
+      })
+      .then(() => this.finalOfEveryTurn());
+  }
+
   // подсчет очков игроков
   countingScores(players) {
     this.scores += players.reduce((acc, prev) => {
@@ -400,25 +418,8 @@ export default class GameController {
     }, 0);
   }
 
-  /* eslint-disable class-methods-use-this */
-  // levelUp оставшихся игроков
-  levelUpPlayers(players) {
-    players.reduce((acc, prev) => {
-      prev.character.levelUp();
-      acc.push(prev);
-      return acc;
-    }, []);
-  }
-  /* eslint-enable class-methods-use-this */
-
-  blockTheField() {
-    this.clickCellsListener = [];
-    this.enterOnCellsListener = [];
-    this.leaveCellsListener = [];
-  }
-
   endOfGame() {
-    this.blockTheField();
+    this.gamePlay.blockTheField();
   }
 
   // кнопки интерфейса
@@ -436,6 +437,8 @@ export default class GameController {
       scores: this.scores,
       turn: this.userTurn,
       players: this.players,
+      userTurn: this.userTurn,
+      selectedChar: this.selectedChar,
     };
 
     this.stateService.save(GameState.from(savingTheGame));
@@ -445,17 +448,25 @@ export default class GameController {
     const savedGame = GameState.from(this.stateService.load());
 
     if (!savedGame) {
-      throw new Error('There is no saved game');
+      GamePlay.showError('There is no saved game');
+      return;
     }
 
+    this.selectedChar = savedGame.selectedChar;
     this.currentLevel = savedGame.level;
     this.scores = savedGame.scores;
     this.userTurn = savedGame.turn;
     this.players = savedGame.players;
+    this.userTurn = savedGame.userTurn;
 
     this.gamePlay.drawUi(themes[this.currentLevel - 1]);
     this.displayTheLevel();
     this.gamePlay.redrawPositions(this.players);
+
+    this.countingScores(this.players);
+    this.clickCellsListener();
+    this.enterOnCellsListener();
+    this.leaveCellsListener();
   }
 
   // Events
@@ -500,7 +511,6 @@ function hasDuplicates(array) {
 }
 
 // перевод поля в двумерную плоскость
-
 function twoDimensionalBoard() {
   return new Array(64)
     .fill(0)
@@ -540,4 +550,14 @@ function checkForAttack(currentPosition, possiblePosition, rangeAttack) {
     return true;
   }
   return false;
+}
+
+// расчет дамага при атаке
+function countingDamage(player, scores) {
+  if (player.character.health > 0) {
+    player.character.health -= scores;
+  } else if (player.character.health <= 0) {
+    player.character.health = 0;
+  }
+  return player;
 }
