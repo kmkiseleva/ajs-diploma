@@ -6,6 +6,7 @@ import themes from './themes';
 import { generateTeam } from './generators';
 import PositionedCharacter from './PositionedCharacter';
 import Team from './Team';
+import Character from './Character';
 
 export default class GameController {
   constructor(gamePlay, stateService) {
@@ -458,6 +459,13 @@ export default class GameController {
     this.userTurn = savedGame.turn;
     this.players = savedGame.players;
     this.userTurn = savedGame.userTurn;
+
+    // присвоение наследования после перезагрузки игры
+    this.players = this.players.reduce((acc, prev) => {
+      prev.character.__proto__ = Character.prototype;
+      acc.push(prev);
+      return acc;
+    }, []);
 
     this.gamePlay.drawUi(themes[this.currentLevel - 1]);
     this.displayTheLevel();
